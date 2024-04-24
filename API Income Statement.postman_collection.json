@@ -1,0 +1,469 @@
+{
+	"info": {
+		"_postman_id": "9d796ad1-5efe-4ddf-a5cf-b77885e4b609",
+		"name": "API Income Statement",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33903296"
+	},
+	"item": [
+		{
+			"name": "Create new Company",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", () => {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"\r",
+							"const jsonData = JSON.parse(responseBody);\r",
+							"\r",
+							"pm.environment.set(\"companyID_env\", jsonData.id);\r",
+							"\r",
+							"Object.entries(jsonData.is[0]).forEach(entry => {\r",
+							"    pm.environment.set(`${entry[0]}_env`, entry[1]);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": \"BAC\",\r\n    \"is\": [\r\n      {\r\n        \"period\": \"2023\",\r\n        \"revenue\": 175000356321,\r\n        \"operatingIncome\": 28862315110,\r\n        \"EBITDA\": 30206523114,\r\n        \"netIncome\": 26521114654,\r\n        \"eps\": 3.08,\r\n        \"revenueGrowth\": 0.5217,\r\n        \"epsGrowth\": -0.00344\r\n      },\r\n      {\r\n        \"period\": \"2022\",\r\n        \"revenue\": 115552356321,\r\n        \"operatingIncome\": 32175315110,\r\n        \"EBITDA\": 33121523114,\r\n        \"netIncome\": 27530114654,\r\n        \"eps\": 3.19,\r\n        \"revenueGrowth\": 0.2105,\r\n        \"epsGrowth\": -0.106\r\n      },\r\n      {\r\n        \"period\": \"2021\",\r\n        \"revenue\": 95762356321,\r\n        \"operatingIncome\": 34142315110,\r\n        \"EBITDA\": 36232523114,\r\n        \"netIncome\": 31982114654,\r\n        \"eps\": 3.57,\r\n        \"revenueGrowth\": 0.0112,\r\n        \"epsGrowth\": 0.9090\r\n      }\r\n    ]\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/incomeStatement",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"incomeStatement"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Income Statement by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const jsonData = JSON.parse(responseBody);\r",
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"check if company ID present in the response body\", () => {\r",
+							"   const jsonData = pm.response.json();\r",
+							"   pm.expect(jsonData.id).to.eql(pm.environment.get(\"companyID_env\"));\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"const items = [\r",
+							"    {label: \"Revenue\", value: \"revenue\"}, \r",
+							"    {label: \"Operating Income\", value: \"operatingIncome\"},\r",
+							"    {label: \"EBITDA\", value: \"EBITDA\"},\r",
+							"    {label: \"Net Income\", value: \"netIncome\"}\r",
+							"];\r",
+							"\r",
+							"function getCAGR(item) {\r",
+							"    const lngt = jsonData.is.length;\r",
+							"    return Math.pow(jsonData.is[0][item]/jsonData.is[lngt - 1][item], 1/(lngt-1))-1;\r",
+							"}\r",
+							"\r",
+							"function getMargin(profit, index) {\r",
+							"    return jsonData.is[index][profit]/jsonData.is[index].revenue;\r",
+							"}\r",
+							"\r",
+							"\r",
+							"\r",
+							"function formatPercentage(num) {\r",
+							"    return (num * 100).toFixed(2)\r",
+							"}\r",
+							"\r",
+							"\r",
+							"items.slice(1).forEach(item => {\r",
+							"    const margins = jsonData.is.map((stat, i) => getMargin(item.value, i));\r",
+							"    console.log(margins);\r",
+							"\r",
+							"    pm.test(`${item.label} margin was positive in all periods`, () => {\r",
+							"        try {\r",
+							"            pm.expect(margins.every(mg => mg > 0)).to.be.true;\r",
+							"        } catch(err) {\r",
+							"            pm.expect.fail(`${item.label} margin was negative in some periods`);\r",
+							"        }\r",
+							"    })\r",
+							"})\r",
+							"\r",
+							"items.forEach(item => {\r",
+							"    const cagr = getCAGR(item.value);\r",
+							"    pm.test(`${item.label} recorded positive 2-year CAGR`,() => {\r",
+							"        try {\r",
+							"            pm.expect(cagr).to.be.above(0);\r",
+							"        } catch(err) {\r",
+							"            pm.expect.fail(`${item.label} recorded 2-year average DECLINE of ${formatPercentage(cagr)}%`)\r",
+							"        }\r",
+							"    })\r",
+							"})\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/incomeStatement/{{companyID_env}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"incomeStatement",
+						"{{companyID_env}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all ISs",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", ()=>{\r",
+							"    pm.response.to.have.status(200)\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"const jsonData = JSON.parse(responseBody);\r",
+							"const items = [\r",
+							"    {label: \"Revenue\", value: \"revenue\"}, \r",
+							"    {label: \"Operating Income\", value: \"operatingIncome\"},\r",
+							"    {label: \"EBITDA\", value: \"EBITDA\"},\r",
+							"    {label: \"Net Income\", value: \"netIncome\"}\r",
+							"];\r",
+							"\r",
+							"function getCAGR(company, item) {\r",
+							"    const lngt = company.is.length;\r",
+							"    return Math.pow(company.is[0][item]/company.is[lngt - 1][item], 1/(lngt-1))-1;\r",
+							"}\r",
+							"\r",
+							"function getMargin(company, profit) {\r",
+							"    return company.is[0][profit]/company.is[0].revenue;\r",
+							"}\r",
+							"\r",
+							"\r",
+							"function formatPercentage(num) {\r",
+							"    return (num * 100).toFixed(2)\r",
+							"}\r",
+							"\r",
+							"function filterByMargin(item, check = \"greater\") {\r",
+							"    return jsonData.filter(jd => {\r",
+							"        const margin = getMargin(jd, item.value);\r",
+							"        if(check === \"greater\") return margin > 0;\r",
+							"        else return margin < 0;\r",
+							"    })\r",
+							"}\r",
+							"\r",
+							"function filterByCagr(item, check = \"greater\", num = 0.05) {\r",
+							"    return jsonData.filter(jd => {\r",
+							"        const cagr = getCAGR(jd, item);\r",
+							"        if(check === \"greater\") return cagr > num;\r",
+							"        else return cagr < num;\r",
+							"    })\r",
+							"}\r",
+							"\r",
+							"function epsGTR() {\r",
+							"    return jsonData.filter(jd => jd.is[0].epsGrowth > jd.is[0].revenueGrowth);\r",
+							"}\r",
+							"\r",
+							"items.slice(1).forEach(item => {\r",
+							"    function getErrorItems() {\r",
+							"        return filterByMargin(item, \"lesser\").map(c => c.id).join(\", \");\r",
+							"    }\r",
+							"    pm.test(`All companies had positive ${item.label} margin in 2023`, () => {\r",
+							"        try {\r",
+							"           pm.expect(filterByMargin(item, \"greater\").length).to.eql(jsonData.length); \r",
+							"        } catch(err) {\r",
+							"            pm.expect.fail(`Companies with negative ${item.label} margin: ${getErrorItems()}`)\r",
+							"        }\r",
+							"    })\r",
+							"})\r",
+							"\r",
+							"pm.test(\"There are 5 or more companies with 2-year revenue CAGR greater or equal to 5%\", () => {\r",
+							"    function getErrorItems() {\r",
+							"        return filterByCagr(\"revenue\", \"lesser\").map(c => c.id).join(\", \");\r",
+							"    }\r",
+							"    try {\r",
+							"        pm.expect(filterByCagr(\"revenue\", \"greater\").length).to.be.at.least(5);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(`Companies with 2-year revenue CAGR lesser than 5%: ${getErrorItems()}`)\r",
+							"    }\r",
+							"})\r",
+							"\r",
+							"pm.test(\"There are 5 or more companies with EPS growing at higher rate than revenue in 2023\", () => {\r",
+							"    const lngt = epsGTR().length;\r",
+							"   \r",
+							"    try {\r",
+							"        pm.expect(lngt).to.be.at.least(5);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(`There are only ${lngt} companies with EPS growing at greater rate than revenue`);\r",
+							"    }\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/incomeStatement",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"incomeStatement"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add new period IS",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"const jsonData = JSON.parse(responseBody);\r",
+							"const rg = jsonData.is[0].revenueGrowth;\r",
+							"const nig = jsonData.is[0].epsGrowth;\r",
+							"const profitLevels = [\r",
+							"    {label: \"EBITDA\", value: \"EBITDA\"}, \r",
+							"    {label: \"Operating Income\", value: \"operatingIncome\"}, \r",
+							"    {label: \"Net Income\", value: \"netIncome\"}\r",
+							"];\r",
+							"\r",
+							"function getMargin(profit, index) {\r",
+							"    return jsonData.is[index][profit]/jsonData.is[index].revenue;\r",
+							"}\r",
+							"\r",
+							"function getBPS(mgChange) {\r",
+							"    return (mgChange * 10000).toFixed(1);\r",
+							"}\r",
+							"\r",
+							"function formatPercentage(num) {\r",
+							"    return (num * 100).toFixed(2)\r",
+							"}\r",
+							"\r",
+							"pm.test(\"Revenue increased since 2023\", () => {\r",
+							"    try {\r",
+							"       pm.expect(rg).to.be.above(0); \r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(\"Revenue declined since 2023\")\r",
+							"    }\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Revenue increased more than 10% since 2023\", () => {\r",
+							"    try {\r",
+							"        pm.expect(rg).to.be.above(0.1);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(`Revenue change of ${formatPercentage(rg)}% was less than 10% and did not satisfy this test condition`)\r",
+							"    }\r",
+							"})\r",
+							"\r",
+							"pm.test(\"EPS was positive for the trailing twelve months\", () => {\r",
+							"    try {\r",
+							"        pm.test(jsonData.is[0].eps).to.be.above(0);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(\"EPS was negative for the trailing twelve months\");\r",
+							"    }\r",
+							"})\r",
+							"\r",
+							"pm.test(\"EPS increased since 2023\", () => {\r",
+							"    try {\r",
+							"        pm.expect(nig).to.be.above(0);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(`EPS declined by ${formatPercentage(nig)}%`);\r",
+							"    }\r",
+							"})\r",
+							"\r",
+							"pm.test(\"EPS increased by more than 10% since 2023\", () => {\r",
+							"    function getErrorString() {\r",
+							"        if(nig < 0) return `EPS declined by ${formatPercentage(nig)}% since 2023`;\r",
+							"        else return `EPS growth of ${formatPercentage(nig)}% since 2023 was less than 10% and did not satisfy this test condition`;\r",
+							"    }\r",
+							"\r",
+							"    try {\r",
+							"        pm.expect(nig).to.be.above(0.1);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(getErrorString());\r",
+							"    }\r",
+							"})\r",
+							"\r",
+							"profitLevels.forEach(pl => {\r",
+							"    const mg = getMargin(pl.value, 0);\r",
+							"    pm.test(`For the trailing twelve months ${pl.label} margin was positive`, () => {\r",
+							"        try {\r",
+							"            pm.expect(mg).to.be.above(0);\r",
+							"        } catch(err) {\r",
+							"            pm.expect.fail(`${pl.label} margin of ${formatPercentage(mg)}% was negative for the last 12 months`);\r",
+							"        }\r",
+							"    })\r",
+							"})\r",
+							"\r",
+							"profitLevels.forEach(pl => {\r",
+							"    const marginChange = getMargin(pl.value, 0) - getMargin(pl.value, 1);\r",
+							"    pm.test(`${pl.label} margin recorded positive change since 2023`, () => {\r",
+							"        try {\r",
+							"            pm.expect(marginChange).to.be.above(0)\r",
+							"        } catch(err) {\r",
+							"            pm.expect.fail(`${pl.label} margin decreased since 2023 by ${getBPS(Math.abs(marginChange))} BPS`);\r",
+							"        }\r",
+							"    })\r",
+							"})\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"id\": \"BAC\",\r\n  \"is\": [\r\n    {\r\n      \"period\": \"TTM\",\r\n      \"revenue\": 181970321456,\r\n      \"operatingIncome\": 27451223212,\r\n      \"EBITDA\": 29231112320,\r\n      \"netIncome\": 25031231100,\r\n      \"eps\": 2.89,\r\n      \"revenueGrowth\": 0.0398,\r\n      \"epsGrowth\": -0.0616\r\n    },\r\n    {\r\n      \"period\": \"2023\",\r\n      \"revenue\": 175000356321,\r\n      \"operatingIncome\": 28862315110,\r\n      \"EBITDA\": 30206523114,\r\n      \"netIncome\": 26521114654,\r\n      \"eps\": 3.08,\r\n      \"revenueGrowth\": 0.5217,\r\n      \"epsGrowth\": -0.00344\r\n    },\r\n    {\r\n      \"period\": \"2022\",\r\n      \"revenue\": 115552356321,\r\n      \"operatingIncome\": 32175315110,\r\n      \"EBITDA\": 33121523114,\r\n      \"netIncome\": 27530114654,\r\n      \"eps\": 3.19,\r\n      \"revenueGrowth\": 0.2105,\r\n      \"epsGrowth\": -0.106\r\n    },\r\n    {\r\n      \"period\": \"2021\",\r\n      \"revenue\": 95762356321,\r\n      \"operatingIncome\": 34142315110,\r\n      \"EBITDA\": 36232523114,\r\n      \"netIncome\": 31982114654,\r\n      \"eps\": 3.57,\r\n      \"revenueGrowth\": 0.0112,\r\n      \"epsGrowth\": 0.9090\r\n    }\r\n  ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/incomeStatement/{{companyID_env}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"incomeStatement",
+						"{{companyID_env}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete IS",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/incomeStatement/{{companyID_env}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"incomeStatement",
+						"{{companyID_env}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "companyID_env",
+			"value": ""
+		},
+		{
+			"key": "period_env",
+			"value": ""
+		},
+		{
+			"key": "revenue_env",
+			"value": ""
+		},
+		{
+			"key": "operatingIncome_env",
+			"value": ""
+		},
+		{
+			"key": "EBITDA_env",
+			"value": ""
+		},
+		{
+			"key": "netIncome_env",
+			"value": ""
+		},
+		{
+			"key": "eps_env",
+			"value": ""
+		},
+		{
+			"key": "revenueGrowth_env",
+			"value": ""
+		},
+		{
+			"key": "epsGrowth_env",
+			"value": ""
+		}
+	]
+}

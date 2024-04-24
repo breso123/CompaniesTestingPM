@@ -1,0 +1,267 @@
+{
+	"info": {
+		"_postman_id": "08f12c16-453a-46c3-a510-9c4b088cd70f",
+		"name": "Get All Company Data by ID",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33903296"
+	},
+	"item": [
+		{
+			"name": "Get Market Data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"check if company ID present in the response body\", () => {\r",
+							"   const jsonData = pm.response.json();\r",
+							"   pm.expect(jsonData.id).to.eql(pm.globals.get(\"globalID\"));\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"const jsonData = JSON.parse(responseBody);\r",
+							"\r",
+							"pm.test(\"Test data type of the response\", () => {\r",
+							" pm.expect(jsonData).to.be.an(\"object\");\r",
+							" Object.entries(jsonData).forEach(prop => {\r",
+							"    pm.expect(jsonData[prop[0]]).to.be.a(prop[0] === \"id\" ? \"string\" : \"number\");\r",
+							" })\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Market capitalization is above USD 1T\", () => {\r",
+							"    try {\r",
+							"        pm.expect(jsonData.marketCap).to.be.above(200000000000);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(\"Market capitalization was below USD 1T\")\r",
+							"    }\r",
+							"\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Company is not as twice riskier than market\", () => {\r",
+							"    try {\r",
+							"        pm.expect(jsonData.beta).to.be.below(2);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(`Beta of ${jsonData.beta} was more than twice riskier than market`)\r",
+							"    }\r",
+							"\r",
+							"})\r",
+							"\r",
+							"pm.test(\"P/E Ratio is lesser than 20x\", () => {\r",
+							"    try {\r",
+							"      pm.expect(jsonData[\"P/E\"]).to.be.below(20);\r",
+							"    } catch(err) {\r",
+							"      pm.expect.fail(`P/E ratio of ${jsonData[\"P/E\"]}x was higher than 20 and not acceptable`)\r",
+							"\r",
+							"    }\r",
+							"})\r",
+							"\r",
+							"pm.test(\"There is a high volume activity in the last 24 hours\", () => {\r",
+							"    try {\r",
+							"        pm.expect(jsonData.volume/jsonData.avg_volume).to.be.above(2);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(\"There was no high volume activity in the last 24 hours\");\r",
+							"    }\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Last 24 hours volume represents at least 5% of shares outstanding\", () => {\r",
+							"    try {\r",
+							"     pm.expect(jsonData.volume/jsonData.shares).to.be.above(0.05);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(\"Last 24 hours volume represents less than 5% of total shares\");\r",
+							"    }\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/marketData/{{globalID}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"marketData",
+						"{{globalID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Profile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"check if company ID present in the response body\", () => {\r",
+							"   const jsonData = pm.response.json();\r",
+							"   pm.expect(jsonData.id).to.eql(pm.globals.get(\"globalID\"));\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"const jsonData = JSON.parse(responseBody)\r",
+							"pm.test(\"Test data type of the response\", () => {\r",
+							" pm.expect(jsonData).to.be.an(\"object\");\r",
+							" pm.expect(jsonData.name).to.be.a(\"string\");\r",
+							" pm.expect(jsonData.id).to.be.a(\"string\");\r",
+							" pm.expect(jsonData.exchange).to.be.a(\"string\");\r",
+							" pm.expect(parseInt(jsonData.employees)).to.be.a(\"number\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"\r",
+							"pm.test(\"Sector is Financial Services\", () => {\r",
+							"   const jsonData = pm.response.json();\r",
+							"   try {\r",
+							"     pm.expect(jsonData.sector).to.eql(\"Financial Services\");\r",
+							"   } catch(err) {\r",
+							"     pm.expect.fail(`${jsonData.name} does not belong in Finanial Services sector`);\r",
+							"   }\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Company employs more than 100000 workers\", () => {\r",
+							"    try {\r",
+							"        pm.expect(+jsonData.employees).to.be.at.least(100000);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(\"Company employs less than 100000 workers\");\r",
+							"    }\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/companies/{{globalID}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"companies",
+						"{{globalID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Income Statement",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const jsonData = JSON.parse(responseBody);\r",
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"check if company ID present in the response body\", () => {\r",
+							"   const jsonData = pm.response.json();\r",
+							"   pm.expect(jsonData.id).to.eql(pm.globals.get(\"globalID\"));\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"const items = [\r",
+							"    {label: \"Revenue\", value: \"revenue\"}, \r",
+							"    {label: \"Operating Income\", value: \"operatingIncome\"},\r",
+							"    {label: \"EBITDA\", value: \"EBITDA\"},\r",
+							"    {label: \"Net Income\", value: \"netIncome\"}\r",
+							"];\r",
+							"\r",
+							"function getCAGR(item) {\r",
+							"    const lngt = jsonData.is.length;\r",
+							"    return Math.pow(jsonData.is[0][item]/jsonData.is[lngt - 1][item], 1/(lngt-1))-1;\r",
+							"}\r",
+							"\r",
+							"function getMargin(profit, index) {\r",
+							"    return jsonData.is[index][profit]/jsonData.is[index].revenue;\r",
+							"}\r",
+							"\r",
+							"\r",
+							"function formatPercentage(num) {\r",
+							"    return (num * 100).toFixed(2)\r",
+							"}\r",
+							"\r",
+							"items.slice(1).forEach(item => {\r",
+							"    const margins = jsonData.is.map((stat, i) => getMargin(item.value, i));\r",
+							"    console.log(margins);\r",
+							"\r",
+							"    pm.test(`${item.label} margin was positive in all periods`, () => {\r",
+							"        try {\r",
+							"            pm.expect(margins.every(mg => mg > 0)).to.be.true;\r",
+							"        } catch(err) {\r",
+							"            pm.expect.fail(`${item.label} margin was negative in some periods`);\r",
+							"        }\r",
+							"    })\r",
+							"})\r",
+							"\r",
+							"items.forEach(item => {\r",
+							"    const cagr = getCAGR(item.value);\r",
+							"    pm.test(`${item.label} recorded positive 2-year CAGR`,() => {\r",
+							"        try {\r",
+							"            pm.expect(cagr).to.be.above(0);\r",
+							"        } catch(err) {\r",
+							"            pm.expect.fail(`${item.label} recorded 2-year average DECLINE of ${formatPercentage(cagr)}%`)\r",
+							"        }\r",
+							"    })\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/incomeStatement/{{globalID}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"incomeStatement",
+						"{{globalID}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

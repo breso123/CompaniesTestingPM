@@ -1,0 +1,279 @@
+{
+	"info": {
+		"_postman_id": "c1016cb6-276d-4290-916f-bb3090e86cde",
+		"name": "API Company Profile",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33903296"
+	},
+	"item": [
+		{
+			"name": "Create Company",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", () => {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"\r",
+							"const jsonData = JSON.parse(responseBody);\r",
+							"pm.environment.set(\"companyID_env\", jsonData.id);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": \"BAC\",\r\n    \"name\": \"Bank of America Corporation\",\r\n    \"location\": \"United States\",\r\n    \"exchange\": \"NYSE\",\r\n    \"sector\": \"Financial Services\",\r\n    \"industry\": \"Banks - Diversified\",\r\n    \"employees\": \"212335\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/{{endpointCompanies}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"{{endpointCompanies}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Company by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"check if company ID present in the response body\", () => {\r",
+							"   const jsonData = pm.response.json();\r",
+							"   pm.expect(jsonData.id).to.eql(pm.environment.get(\"companyID_env\"));\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"const jsonData = JSON.parse(responseBody)\r",
+							"pm.test(\"Test data type of the response\", () => {\r",
+							" pm.expect(jsonData).to.be.an(\"object\");\r",
+							" pm.expect(jsonData.name).to.be.a(\"string\");\r",
+							" pm.expect(jsonData.id).to.be.a(\"string\");\r",
+							" pm.expect(jsonData.exchange).to.be.a(\"string\");\r",
+							" pm.expect(parseInt(jsonData.employees)).to.be.a(\"number\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"\r",
+							"pm.test(\"Sector is Financial Services\", () => {\r",
+							"   const jsonData = pm.response.json();\r",
+							"   try {\r",
+							"     pm.expect(jsonData.sector).to.eql(\"Financial Services\");\r",
+							"   } catch(err) {\r",
+							"     pm.expect.fail(`${jsonData.name} does not belong in Finanial Services sector`);\r",
+							"   }\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Company employs more than 100000 workers\", () => {\r",
+							"    try {\r",
+							"        pm.expect(+jsonData.employees).to.be.at.least(100000);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail(\"Company employs less than 100000 workers\");\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/{{endpointCompanies}}/{{companyID_env}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"{{endpointCompanies}}",
+						"{{companyID_env}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Companies",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", ()=>{\r",
+							"    pm.response.to.have.status(200)\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"const jsonData = JSON.parse(responseBody);\r",
+							"const comServices = jsonData.filter(company => company.sector === \"Communication Services\");\r",
+							"pm.test(\"There are 10 or more companies in the response\", () => {\r",
+							"    pm.expect(jsonData.length).to.be.at.least(10);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"There are 3 or more companies within comunication services sector\", () => {\r",
+							"    const csl = comServices.length;\r",
+							"    try {\r",
+							"        pm.expect(comServices.length).to.be.at.least(3);\r",
+							"    } catch(err) {\r",
+							"        pm.expect.fail()\r",
+							"    }\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/{{endpointCompanies}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"{{endpointCompanies}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Company",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": \"BAC\",\r\n    \"name\": \"Bank of America Corporation\",\r\n    \"location\": \"United States\",\r\n    \"exchange\": \"NASDAQ\",\r\n    \"sector\": \"Financial Services\",\r\n    \"industry\": \"Banks - Loans & Services\",\r\n    \"employees\": \"200000\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/{{endpointCompanies}}/{{companyID_env}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"{{endpointCompanies}}",
+						"{{companyID_env}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Company",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check status code\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content-Type header is application/json\", () => {\r",
+							" pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 100ms\", () => {\r",
+							" pm.expect(pm.response.responseTime).to.be.below(100);\r",
+							"});\r",
+							"\r",
+							"pm.environment.unset(\"companyID_env\");"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/{{endpointCompanies}}/{{companyID_env}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"{{endpointCompanies}}",
+						"{{companyID_env}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
